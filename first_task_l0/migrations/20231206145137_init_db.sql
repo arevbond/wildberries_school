@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS customers
 (
-    id VARCHAR PRIMARY KEY NOT NULL UNIQUE,
+    customer_id VARCHAR PRIMARY KEY NOT NULL UNIQUE,
     name VARCHAR NOT NULL,
     phone VARCHAR NOT NULL,
     zip VARCHAR NOT NULL,
@@ -13,12 +13,12 @@ CREATE TABLE IF NOT EXISTS customers
 
 CREATE TABLE IF NOT EXISTS orders
 (
-    id VARCHAR PRIMARY KEY NOT NULL UNIQUE,
+    order_uid VARCHAR PRIMARY KEY NOT NULL UNIQUE,
     track_number VARCHAR NOT NULL UNIQUE,
     entry VARCHAR NOT NULL,
     customer_id VARCHAR,
     FOREIGN KEY (customer_id) REFERENCES customers,
-    payment JSONB NOT NULL,
+    payment JSON NOT NULL,
     locale VARCHAR NOT NULL,
     internal_signature VARCHAR,
     delivery_service VARCHAR NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS orders
 
 CREATE TABLE IF NOT EXISTS items
 (
-    id BIGINT PRIMARY KEY NOT NULL UNIQUE,
+    chrt_id BIGINT PRIMARY KEY NOT NULL UNIQUE,
     track_number VARCHAR NOT NULL,
     price BIGINT NOT NULL,
     rid VARCHAR NOT NULL,

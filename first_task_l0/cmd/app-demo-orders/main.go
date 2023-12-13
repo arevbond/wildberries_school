@@ -4,9 +4,15 @@ import (
 	stan_sub "first_task_l0/internal/clients/stan-sub"
 	"first_task_l0/internal/config"
 	"first_task_l0/internal/events"
+	"first_task_l0/internal/http_server/handlers/order"
+	"first_task_l0/internal/lib"
+	cache2 "first_task_l0/internal/storage/cache"
 	"first_task_l0/internal/storage/postgres"
 	"fmt"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"log/slog"
+	"net/http"
 	"os"
 )
 
@@ -30,25 +36,53 @@ func main() {
 	subscriber := stan_sub.New(clusterID, clientID, log)
 	err := subscriber.Subscribe(subject)
 	if err != nil {
-		log.Error(fmt.Sprintf("can't subscribe to topic %s:", subject), err)
+		log.Error(fmt.Sprintf("can't subscribe to topic %s:", subject), lib.Err(err))
 	}
+
 	storage, err := postgres.New(cfg)
 	if err != nil {
 		log.Error("can't init postgres storage")
 		os.Exit(1)
 	}
 
+	cache, err := cache2.New(cfg)
+	if err != nil {
+		log.Error("can't init cache", lib.Err(err))
+		os.Exit(1)
+	}
+
+	err = cache.Recovery()
+	if err != nil {
+		log.Error("can't recovery cache", lib.Err(err))
+		os.Exit(1)
+	}
+
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.URLFormat)
+
+	r.Route("/orders", func(r chi.Router) {
+		r.Get("/{orderID}", order.New(log, cache))
+	})
+
+	go http.ListenAndServe(":3333", r)
+
 	processor := events.New(storage)
 
 	for order := range subscriber.Orders {
-		log.Info(fmt.Sprintf("get order %s from channel", order.Name))
 		err = processor.CreateOrder(order)
 		if err != nil {
-			log.Error("can't create order", err)
+			log.Error("can't create order %v", lib.Err(err))
 		} else {
-			log.Info("create order")
+			log.Info(fmt.Sprintf("create order %s in db", order.OrderUID))
 		}
+
+		cache.CreateOrder(order)
+		log.Info(fmt.Sprintf("create order %s in cache", order.OrderUID))
 	}
+
 }
 
 func setupLogger(env string) *slog.Logger {

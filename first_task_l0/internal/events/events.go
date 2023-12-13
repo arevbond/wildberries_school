@@ -20,14 +20,14 @@ func New(db storage.Storage) *Processor {
 // и записывает в БД данные.
 func (p *Processor) CreateOrder(inOrder stan_sub.Order) error {
 	customer := &storage.CustomerDB{
-		ID:      inOrder.CustomerID,
-		Name:    inOrder.Delivery.Name,
-		Phone:   inOrder.Delivery.Phone,
-		Zip:     inOrder.Delivery.Zip,
-		City:    inOrder.Delivery.City,
-		Address: inOrder.Delivery.Address,
-		Region:  inOrder.Delivery.Region,
-		Email:   inOrder.Delivery.Email,
+		CustomerID: inOrder.CustomerID,
+		Name:       inOrder.Delivery.Name,
+		Phone:      inOrder.Delivery.Phone,
+		Zip:        inOrder.Delivery.Zip,
+		City:       inOrder.Delivery.City,
+		Address:    inOrder.Delivery.Address,
+		Region:     inOrder.Delivery.Region,
+		Email:      inOrder.Delivery.Email,
 	}
 
 	err := p.db.CreateCustomer(customer)
@@ -41,7 +41,7 @@ func (p *Processor) CreateOrder(inOrder stan_sub.Order) error {
 		Currency:     inOrder.Payment.Currency,
 		Provider:     inOrder.Payment.Provider,
 		Amount:       inOrder.Payment.Amount,
-		PaymentDT:    inOrder.Payment.PaymentID,
+		PaymentDT:    inOrder.Payment.PaymentDT,
 		Bank:         inOrder.Payment.Bank,
 		DeliveryCost: inOrder.Payment.DeliveryCost,
 		GoodsTotal:   inOrder.Payment.GoodsTotal,
@@ -49,7 +49,7 @@ func (p *Processor) CreateOrder(inOrder stan_sub.Order) error {
 	}
 
 	order := &storage.OrderDB{
-		ID:                inOrder.OrderUID,
+		OrderUID:          inOrder.OrderUID,
 		TrackNumber:       inOrder.TrackNumber,
 		Entry:             inOrder.Entry,
 		CustomerID:        inOrder.CustomerID,
@@ -69,12 +69,13 @@ func (p *Processor) CreateOrder(inOrder stan_sub.Order) error {
 
 	for _, itm := range inOrder.Items {
 		item := &storage.ItemDB{
-			ID:          itm.ChrtID,
+			ChrtID:      itm.ChrtID,
 			TrackNumber: inOrder.TrackNumber,
 			Price:       itm.Price,
 			Rid:         itm.Rid,
 			Name:        itm.Name,
 			Sale:        itm.Sale,
+			Size:        itm.Size,
 			TotalPrice:  itm.TotalPrice,
 			NmID:        itm.NmID,
 			Brand:       itm.Brand,

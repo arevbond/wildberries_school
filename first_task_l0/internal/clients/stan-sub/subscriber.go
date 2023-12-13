@@ -2,6 +2,7 @@ package stan_sub
 
 import (
 	"encoding/json"
+	"first_task_l0/internal/lib"
 	"fmt"
 	"github.com/nats-io/stan.go"
 	"log/slog"
@@ -9,11 +10,11 @@ import (
 )
 
 type Order struct {
-	OrderUID          string `json:"order_uid" db:"order_uid"`
-	TrackNumber       string `json:"track_number" db:"track_number"`
-	Entry             string `json:"entry" db:"entry"`
-	Delivery          `json:"delivery" db:"delivery"`
-	Payment           `json:"payment" db:"payment"`
+	OrderUID          string    `json:"order_uid" db:"order_uid"`
+	TrackNumber       string    `json:"track_number" db:"track_number"`
+	Entry             string    `json:"entry" db:"entry"`
+	Delivery          Delivery  `json:"delivery" db:"delivery"`
+	Payment           Payment   `json:"payment" db:"payment"`
 	Items             []Item    `json:"items" db:"items"`
 	Locale            string    `json:"locale" db:"locale"`
 	InternalSignature string    `json:"internal_signature" db:"internal_signature"`
@@ -26,7 +27,7 @@ type Order struct {
 }
 
 type Delivery struct {
-	Name    string `son:"name" db:"name"`
+	Name    string `json:"name" db:"name"`
 	Phone   string `json:"phone" db:"phone"`
 	Zip     string `json:"zip" db:"zip"`
 	City    string `json:"city"`
@@ -41,7 +42,7 @@ type Payment struct {
 	Currency     string `json:"currency" db:"currency"`
 	Provider     string `json:"provider" db:"provider"`
 	Amount       int    `json:"amount" db:"amount"`
-	PaymentID    int    `json:"paymentID" db:"paymentID"`
+	PaymentDT    int    `json:"payment_dt" db:"payment_dt"`
 	Bank         string `json:"bank" db:"bank"`
 	DeliveryCost int    `json:"delivery_cost" db:"delivery_cost"`
 	GoodsTotal   int    `json:"goods_total" db:"goods_total"`
@@ -72,7 +73,7 @@ type Subscriber struct {
 func New(clusterID, clientID string, log *slog.Logger) *Subscriber {
 	sc, err := stan.Connect(clusterID, clientID)
 	if err != nil {
-		log.Error("can't create new Subscriber:", err)
+		log.Error("can't create new Subscriber:", lib.Err(err))
 		return nil
 	}
 	return &Subscriber{conn: sc, log: log, Orders: make(chan Order)}
@@ -83,14 +84,14 @@ func (s *Subscriber) Subscribe(subject string) error {
 		var order Order
 		err := json.Unmarshal(msg.Data, &order)
 		if err != nil {
-			s.log.Error("cant unmarshall order:", err)
+			s.log.Error("cant unmarshall order:", lib.Err(err))
 			return
 		}
-		s.log.Info(fmt.Sprintf("recieved order from nats: %s", order.Name))
+		s.log.Info(fmt.Sprintf("recieved order from nats: %s", order.Delivery.Name))
 		s.Orders <- order
 	})
 	if err != nil {
-		s.log.Error(fmt.Sprintf("can't subscribe to topic %s:", subject), err)
+		s.log.Error(fmt.Sprintf("can't subscribe to topic %s:", subject), lib.Err(err))
 	}
 	s.sub = sub
 	return nil
@@ -101,7 +102,7 @@ func (s *Subscriber) Unsubscribe() error {
 
 	err := s.sub.Unsubscribe()
 	if err != nil {
-		s.log.Error("can't unsubscribe from topic:", err)
+		s.log.Error("can't unsubscribe from topic:", lib.Err(err))
 		return err
 	}
 	return nil
