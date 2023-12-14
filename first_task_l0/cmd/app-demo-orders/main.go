@@ -4,6 +4,7 @@ import (
 	stan_sub "first_task_l0/internal/clients/stan-sub"
 	"first_task_l0/internal/config"
 	"first_task_l0/internal/events"
+	"first_task_l0/internal/http_server/handlers/display"
 	"first_task_l0/internal/http_server/handlers/order"
 	"first_task_l0/internal/lib"
 	cache2 "first_task_l0/internal/storage/cache"
@@ -53,7 +54,7 @@ func main() {
 
 	err = cache.Recovery()
 	if err != nil {
-		log.Error("can't recovery cache", lib.Err(err))
+		log.Error("can't recovery cache from db", lib.Err(err))
 		os.Exit(1)
 	}
 
@@ -64,23 +65,24 @@ func main() {
 	r.Use(middleware.URLFormat)
 
 	r.Route("/orders", func(r chi.Router) {
-		r.Get("/{orderID}", order.New(log, cache))
+		r.Get("/", display.GetOrderById(cache))
+		r.Get("/{orderID}", order.New(cache))
 	})
 
 	go http.ListenAndServe(":3333", r)
 
 	processor := events.New(storage)
 
-	for order := range subscriber.Orders {
-		err = processor.CreateOrder(order)
+	for ord := range subscriber.Orders {
+		err = processor.CreateOrder(ord)
 		if err != nil {
 			log.Error("can't create order %v", lib.Err(err))
 		} else {
-			log.Info(fmt.Sprintf("create order %s in db", order.OrderUID))
+			log.Info(fmt.Sprintf("create order %s in db", ord.OrderUID))
 		}
 
-		cache.CreateOrder(order)
-		log.Info(fmt.Sprintf("create order %s in cache", order.OrderUID))
+		cache.CreateOrder(ord)
+		log.Info(fmt.Sprintf("create order %s in cache", ord.OrderUID))
 	}
 
 }

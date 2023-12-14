@@ -5,11 +5,10 @@ import (
 	"first_task_l0/internal/storage/cache"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	"log/slog"
 	"net/http"
 )
 
-func New(log *slog.Logger, db *cache.Cache) http.HandlerFunc {
+func New(db *cache.Cache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var order stan_sub.Order
 		var err error

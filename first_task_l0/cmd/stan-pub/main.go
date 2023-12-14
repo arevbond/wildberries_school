@@ -14,7 +14,7 @@ var (
 )
 
 type FakeJSONMessage struct {
-	OrderUID          string `fake:"{regex:[a-z|0-9]{19}}" json:"order_uid"`
+	OrderUID          string `fake:"{regex:([a-z]|[0-9]){19}}" json:"order_uid"`
 	TrackNumber       string `fake:"{regex:[A-Z]{13}}" json:"track_number"`
 	Entry             string `fake:"{regex:[A-Z]{4}}" json:"entry"`
 	Delivery          `json:"delivery"`
@@ -103,6 +103,6 @@ func main() {
 		}
 		_ = sc.Publish(subject, data)
 		log.Printf("send message in topic %s\n", subject)
-		time.Sleep(5 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }
