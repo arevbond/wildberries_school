@@ -1,0 +1,2 @@
+[Шаблоны проектирования с реальными аналогиями ](https://habr.com/ru/companies/vk/articles/325492/) \
+[Примеры паттернов проектирования на Go](https://github.com/AlexanderGrom/go-patterns/tree/master?tab=readme-ov-file)
